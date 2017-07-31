@@ -10,17 +10,38 @@ namespace ACMEStoreWebAPI.Controllers
     [Route("api/[controller]")]
     public class UserController : Controller
     {
+        private readonly UserContext _context;
+
+        public UserController(UserContext context)
+        {
+            _context = context;
+        }
+
         // POST api/user
         [HttpPost]
         public IActionResult Create([FromBody] User user)
         {
-            if (null == user) {
-                return null;
+            if (null != user) {
+                int total = _context.UserItems.Count();
+                long lastId = 1;
+
+                if (total > 0) {
+                    User lastUser = _context.UserItems.Last();
+                    if (null != lastUser)
+                    {
+                        lastId = lastUser.id + 1;
+                    }
+                }
+
+                user.id = lastId;
+                _context.UserItems.Add(user);
+                _context.SaveChanges();
+
+                return new OkObjectResult(user);
             }
             else
             {
-                user.id = 1;
-                return new OkObjectResult(user);
+                return BadRequest();
             }
         }
 
@@ -28,14 +49,15 @@ namespace ACMEStoreWebAPI.Controllers
         [HttpDelete("{userId}")]
         public IActionResult Delete(int userId)
         {
-            User user = new User();
-            user.id = userId;
-            user.email = "grecks.shake@gmail.com";
-            user.money = 300;
-            user.type = "ROADRUNNER";
-            user.productList = new List<Product>();
-
-            return new OkObjectResult(user);
+            User user = _context.UserItems.FirstOrDefault(t => t.id == userId);
+            if (null != user) {
+                _context.UserItems.Remove(user);
+                _context.SaveChanges();
+                return new OkObjectResult(user);
+            } else
+            {
+                return NotFound();
+            }
         }
     }
 }

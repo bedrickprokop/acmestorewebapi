@@ -10,6 +10,12 @@ namespace ACMEStoreWebAPI.Controllers
     [Route("api/[controller]")]
     public class ProductController
     {
+        private readonly ProductContext _context;
+
+        public ProductController(ProductContext context) {
+            _context = context;
+        }
+
         // GET api/product
         [HttpGet]
         public IActionResult List(long ownerId, String status, int page)
@@ -21,7 +27,7 @@ namespace ACMEStoreWebAPI.Controllers
             user.email = "grecks.shake@gmail.com";
             user.money = 300;
             user.type = "ROADRUNNER";
-            user.productList = new List<Product>();
+            user.productIdList = new List<long>();
 
             for (int i = 0; i < 15; i++) {
                 Product product = new Product();
@@ -31,7 +37,7 @@ namespace ACMEStoreWebAPI.Controllers
                 product.description = "Product teste" + i + 1;
                 product.status = "TOSELL";
                 product.unitPrice = 40.33 + i;
-                product.owner = user;
+                product.ownerId = user.id;
                 productList.Add(product);
             }
             return new OkObjectResult(productList);
@@ -54,8 +60,8 @@ namespace ACMEStoreWebAPI.Controllers
             user.email = "grecks.shake@gmail.com";
             user.money = 300;
             user.type = "ROADRUNNER";
-            user.productList = new List<Product>();
-            product.owner = user;
+            user.productIdList = new List<long>();
+            product.ownerId = user.id;
 
             return new OkObjectResult(product);
         }
@@ -92,8 +98,8 @@ namespace ACMEStoreWebAPI.Controllers
             user.email = "grecks.shake@gmail.com";
             user.money = 300;
             user.type = "ROADRUNNER";
-            user.productList = new List<Product>();
-            product.owner = user;
+            user.productIdList = new List<long>();
+            product.ownerId = user.id;
             return new OkObjectResult(product);
         }
 

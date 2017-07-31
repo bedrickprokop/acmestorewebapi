@@ -13,6 +13,6 @@ namespace ACMEStoreWebAPI.Models
         public String pictureUrl { get; set; }
         public Double unitPrice { get; set; }
         public String status { get; set; }
-        public User owner { get; set; }
+        public long ownerId { get; set; }
     }
 }

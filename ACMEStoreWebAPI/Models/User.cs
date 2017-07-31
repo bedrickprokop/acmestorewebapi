@@ -11,6 +11,6 @@ namespace ACMEStoreWebAPI.Models
         public String email { get; set; }
         public String type { get; set; }
         public Double money { get; set; }
-        public List<Product> productList { get; set; }
+        public List<long> productIdList { get; set; }
     }
 }
