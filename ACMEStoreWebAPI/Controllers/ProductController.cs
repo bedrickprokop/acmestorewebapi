@@ -11,10 +11,12 @@ namespace ACMEStoreWebAPI.Controllers
     public class ProductController : Controller
     {
         private readonly ProductContext _productContext;
+        private readonly UserContext _userContext;
         private QueueService queueService;
 
-        public ProductController(ProductContext productContext) {
+        public ProductController(ProductContext productContext, UserContext userContext) {
             _productContext = productContext;
+            _userContext = userContext;
             queueService = new QueueService();
         }
 
@@ -54,7 +56,7 @@ namespace ACMEStoreWebAPI.Controllers
         [HttpGet("{productId}")]
         public IActionResult FindById(Int32? productId)
         {
-            if(null != productId)
+            if (null != productId)
             {
                 Product product = _productContext.ProductItems.First(t => t.id == productId);
                 return new OkObjectResult(product);
@@ -76,10 +78,44 @@ namespace ACMEStoreWebAPI.Controllers
                 _productContext.ProductItems.Add(product);
                 _productContext.SaveChanges();
 
-                MessageQueue messageQueue = new MessageQueue{ message = product.description };
-                queueService.sendMessage(messageQueue);
+                User user = _userContext.UserItems.First(t => t.id == product.ownerId);
+                if(null != user)
+                {
+                    MessageQueue messageQueue = new MessageQueue
+                    {
+                        productId = product.id,
+                        fromNotification = true,
+                        fromView = "all",
+                        user = user,
+                        message = "New product available"
+                    };
+                    queueService.sendMessage(messageQueue);
+                }
 
                 return new OkObjectResult(product);
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+
+        // PUT api/product/1
+        [HttpPut("{productId}")]
+        public IActionResult Update(Int32? productId, [FromBody] Product product) 
+        {
+            if (null != productId)
+            {
+                Product productFinded = _productContext.ProductItems.First(t => t.id == productId);
+                if (null != productFinded)
+                {
+                    productFinded = product;
+                    _productContext.ProductItems.Update(productFinded);
+                    _productContext.SaveChanges();
+
+                    return new OkObjectResult(product);
+                }
+                return NotFound();
             }
             else
             {

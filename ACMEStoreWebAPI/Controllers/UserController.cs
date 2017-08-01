@@ -19,8 +19,8 @@ namespace ACMEStoreWebAPI.Controllers
 
             if (_userContext.UserItems.Count() == 0)
             {
-                _userContext.UserItems.Add(new User { id = 1, email = "coyote@gmail.com", money = 3000 });
-                _userContext.UserItems.Add(new User { id = 2, email = "roadrunner@hotmail.com", money = 3000 });
+                _userContext.UserItems.Add(new User { id = 1, email = "coyote@gmail.com", money = 3000, token = "" });
+                _userContext.UserItems.Add(new User { id = 2, email = "roadrunner@hotmail.com", money = 3000, token = "" });
                 _userContext.SaveChanges();
             }
             if (_productContext.ProductItems.Count() == 0) {
@@ -155,6 +155,21 @@ namespace ACMEStoreWebAPI.Controllers
         {
             List<User> userList = _userContext.UserItems.ToList();
             return new OkObjectResult(userList);
+        }
+
+        // GET api/user/5
+        [HttpGet("{userId}")]
+        public IActionResult FindById(Int32? userId)
+        {
+            if (null != userId)
+            {
+                User user = _userContext.UserItems.First(t => t.id == userId);
+                return new OkObjectResult(user);
+            }
+            else
+            {
+                return new OkObjectResult(new User());
+            }
         }
 
 

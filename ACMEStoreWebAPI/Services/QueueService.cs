@@ -39,7 +39,10 @@ namespace ACMEStoreWebAPI.Services
 
         public void sendMessage(MessageQueue messageQueue)
         {
-            var cloudQueueMessage = new CloudQueueMessage(messageQueue.message);
+            string jsonString = Newtonsoft.Json.JsonConvert.SerializeObject(messageQueue);
+            Console.WriteLine(jsonString);
+            
+            var cloudQueueMessage = new CloudQueueMessage(jsonString);
             queueOne.AddMessageAsync(cloudQueueMessage);
         }
     }

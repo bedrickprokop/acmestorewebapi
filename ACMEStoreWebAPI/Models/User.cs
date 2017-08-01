@@ -10,5 +10,6 @@ namespace ACMEStoreWebAPI.Models
         public Int32 id { get; set; }
         public String email { get; set; }
         public Double money { get; set; }
+        public String token { get; set; }
     }
 }
