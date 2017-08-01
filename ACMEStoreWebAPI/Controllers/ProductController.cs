@@ -10,11 +10,9 @@ namespace ACMEStoreWebAPI.Controllers
     public class ProductController : Controller
     {
         private readonly ProductContext _productContext;
-        private readonly UserContext _userContext;
 
-        public ProductController(ProductContext productContext, UserContext userContext) {
+        public ProductController(ProductContext productContext) {
             _productContext = productContext;
-            _userContext = userContext;
         }
 
         // GET api/product
