@@ -29,7 +29,14 @@ namespace ACMEStoreWebAPI.Controllers
         [HttpGet("query")]
         public IActionResult List([FromQuery] Int32? ownerId, [FromQuery] String status, [FromQuery] Int32? page)
         {
-            if (ownerId != null && status != null)
+            if (ownerId == null && status != null)
+            {
+                List<Product> productList = _productContext.ProductItems
+                .Where(product => product.status.Equals(status)).ToList();
+
+                return new OkObjectResult(productList);
+            }
+            else if (ownerId != null && status != null)
             {
                 List<Product> productList = _productContext.ProductItems
                 .Where(product => product.ownerId == ownerId && product.status.Equals(status)).ToList();
