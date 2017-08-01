@@ -1,120 +1,141 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using ACMEStoreWebAPI.Models;
 
 namespace ACMEStoreWebAPI.Controllers
 {
     [Route("api/[controller]")]
-    public class ProductController
+    public class ProductController : Controller
     {
-        private readonly ProductContext _context;
+        private readonly ProductContext _productContext;
+        private readonly UserContext _userContext;
 
-        public ProductController(ProductContext context) {
-            _context = context;
+        public ProductController(ProductContext productContext, UserContext userContext) {
+            _productContext = productContext;
+            _userContext = userContext;
         }
 
         // GET api/product
         [HttpGet]
-        public IActionResult List(long ownerId, String status, int page)
+        public IActionResult List()
         {
-            List<Product> productList = new List<Product>();
-
-            User user = new User();
-            user.id = 2;
-            user.email = "grecks.shake@gmail.com";
-            user.money = 300;
-            user.type = "ROADRUNNER";
-            user.productIdList = new List<long>();
-
-            for (int i = 0; i < 15; i++) {
-                Product product = new Product();
-                product.id = i+1;
-                product.name = "Product " + i + 1;
-                product.pictureUrl = "http://www.teste.com";
-                product.description = "Product teste" + i + 1;
-                product.status = "TOSELL";
-                product.unitPrice = 40.33 + i;
-                product.ownerId = user.id;
-                productList.Add(product);
-            }
+            List<Product> productList = _productContext.ProductItems.ToList();
             return new OkObjectResult(productList);
+        }
+
+        // GET api/product/query?ownerid=1&status=TOSELL&page=1
+        [HttpGet("query")]
+        public IActionResult List([FromQuery] Int32? ownerId, [FromQuery] String status, [FromQuery] Int32? page)
+        {
+            if (ownerId != null && status != null)
+            {
+                List<Product> productList = _productContext.ProductItems
+                .Where(product => product.ownerId == ownerId && product.status.Equals(status)).ToList();
+
+                return new OkObjectResult(productList);
+            }
+            else
+            {
+                return new OkObjectResult(new List<Product>(0));
+            }
         }
 
         // GET api/product/5
         [HttpGet("{productId}")]
-        public IActionResult FindById(int productId)
+        public IActionResult FindById(Int32? productId)
         {
-            Product product = new Product();
-            product.id = productId;
-            product.name = "Product 1";
-            product.pictureUrl = "http://www.teste.com";
-            product.description = "Product teste one";
-            product.status = "TOSELL";
-            product.unitPrice = 40.33;
-
-            User user = new User();
-            user.id = 2;
-            user.email = "grecks.shake@gmail.com";
-            user.money = 300;
-            user.type = "ROADRUNNER";
-            user.productIdList = new List<long>();
-            product.ownerId = user.id;
-
-            return new OkObjectResult(product);
+            if(null != productId)
+            {
+                Product product = _productContext.ProductItems.First(t => t.id == productId);
+                return new OkObjectResult(product);
+            }
+            else
+            {
+                return new OkObjectResult(new Product());
+            }
         }
 
         // POST api/product
         [HttpPost]
         public IActionResult Create([FromBody] Product product)
         {
-            if (null == product)
+            if (null != product)
             {
-                return null;
+                int total = _productContext.ProductItems.Count();
+                product.id = total + 1;
+                _productContext.ProductItems.Add(product);
+                _productContext.SaveChanges();
+                
+                return new OkObjectResult(product);
             }
             else
             {
-                product.id = 1;
-                return new OkObjectResult(product);
+                return BadRequest();
             }
         }
 
         // DELETE api/product/5
         [HttpDelete("{productId}")]
-        public IActionResult Delete(int productId)
+        public IActionResult Delete(Int32? productId)
         {
-            Product product = new Product();
-            product.id = productId;
-            product.name = "Product 1";
-            product.pictureUrl = "http://www.teste.com";
-            product.description = "Product teste one";
-            product.status = "TOSELL";
-            product.unitPrice = 40.33;
-
-            User user = new User();
-            user.id = 2;
-            user.email = "grecks.shake@gmail.com";
-            user.money = 300;
-            user.type = "ROADRUNNER";
-            user.productIdList = new List<long>();
-            product.ownerId = user.id;
-            return new OkObjectResult(product);
+            if (null != productId)
+            {
+                Product product = _productContext.ProductItems.FirstOrDefault(t => t.id == productId);
+                if (null != product)
+                {
+                    _productContext.ProductItems.Remove(product);
+                    _productContext.SaveChanges();
+                    return new OkObjectResult(product);
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
 
-        // POST api/product/buy
-        [HttpPost("buy/{productId}")]
-        public IActionResult Buy(int productId)
+        // POST api/product/buy/{buyerId}/{productId}
+        [HttpPost("buy/{buyerId}/{productId}")]
+        public IActionResult Buy(Int32? buyerId, Int32? productId)
         {
-            return new OkObjectResult(true);
+            if (null != buyerId && null != productId)
+            {
+
+                Product product = _productContext.ProductItems.First(t => t.id.Equals(productId));
+                product.status = "BOUGHT";
+                product.ownerId = buyerId.Value;
+                _productContext.SaveChanges();
+                
+                return new OkObjectResult(true);
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
 
         // POST api/product/sell
         [HttpPost("sell/{productId}")]
-        public IActionResult Sell(int productId)
+        public IActionResult Sell(Int32? productId)
         {
-            return new OkObjectResult(true);
+            if (null != productId)
+            {
+                Product product = _productContext.ProductItems.First(t => t.id.Equals(productId));
+                product.status = "TOSELL";
+                _productContext.SaveChanges();
+
+                return new OkObjectResult(true);
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
     }
 }

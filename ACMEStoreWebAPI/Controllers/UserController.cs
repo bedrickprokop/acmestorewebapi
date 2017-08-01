@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using ACMEStoreWebAPI.Models;
 
@@ -10,23 +9,34 @@ namespace ACMEStoreWebAPI.Controllers
     [Route("api/[controller]")]
     public class UserController : Controller
     {
-        private readonly UserContext _context;
+        private readonly UserContext _userContext;
+        private readonly ProductContext _productContext;
 
-        public UserController(UserContext context)
+        public UserController(UserContext userContext, ProductContext productContext)
         {
-            _context = context;
+            _userContext = userContext;
+            _productContext = productContext;
         }
+
+        // GET api/user
+        [HttpGet]
+        public IActionResult List()
+        {
+            List<User> userList = _userContext.UserItems.ToList();
+            return new OkObjectResult(userList);
+        }
+
 
         // POST api/user
         [HttpPost]
         public IActionResult Create([FromBody] User user)
         {
             if (null != user) {
-                int total = _context.UserItems.Count();
-                long lastId = 1;
+                int total = _userContext.UserItems.Count();
+                Int32 lastId = 1;
 
                 if (total > 0) {
-                    User lastUser = _context.UserItems.Last();
+                    User lastUser = _userContext.UserItems.Last();
                     if (null != lastUser)
                     {
                         lastId = lastUser.id + 1;
@@ -34,8 +44,8 @@ namespace ACMEStoreWebAPI.Controllers
                 }
 
                 user.id = lastId;
-                _context.UserItems.Add(user);
-                _context.SaveChanges();
+                _userContext.UserItems.Add(user);
+                _userContext.SaveChanges();
 
                 return new OkObjectResult(user);
             }
@@ -47,17 +57,34 @@ namespace ACMEStoreWebAPI.Controllers
 
         // DELETE api/user/5
         [HttpDelete("{userId}")]
-        public IActionResult Delete(int userId)
+        public IActionResult Delete(Int32? userId)
         {
-            User user = _context.UserItems.FirstOrDefault(t => t.id == userId);
-            if (null != user) {
-                _context.UserItems.Remove(user);
-                _context.SaveChanges();
-                return new OkObjectResult(user);
+            if (null != userId) {
+                User user = _userContext.UserItems.FirstOrDefault(t => t.id == userId);
+                if (null != user)
+                {
+                    _userContext.UserItems.Remove(user);
+                    _userContext.SaveChanges();
+                    
+                    List<Product> productsToRemove = _productContext.ProductItems
+                        .Where(t => t.ownerId.Equals(user.id)).ToList();
+
+                    if (null != productsToRemove && productsToRemove.Count() > 0)
+                    {
+                        _productContext.ProductItems.RemoveRange(productsToRemove);
+                        _productContext.SaveChanges();
+                    }
+                    return new OkObjectResult(user);
+                }
+                else
+                {
+                    return NotFound();
+                }
             } else
             {
-                return NotFound();
+                return BadRequest();
             }
         }
+       
     }
 }
