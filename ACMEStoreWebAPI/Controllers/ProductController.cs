@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using ACMEStoreWebAPI.Models;
+using ACMEStoreWebAPI.Services;
 
 namespace ACMEStoreWebAPI.Controllers
 {
@@ -10,9 +11,11 @@ namespace ACMEStoreWebAPI.Controllers
     public class ProductController : Controller
     {
         private readonly ProductContext _productContext;
+        private QueueService queueService;
 
         public ProductController(ProductContext productContext) {
             _productContext = productContext;
+            queueService = new QueueService();
         }
 
         // GET api/product
@@ -72,7 +75,10 @@ namespace ACMEStoreWebAPI.Controllers
                 product.id = total + 1;
                 _productContext.ProductItems.Add(product);
                 _productContext.SaveChanges();
-                
+
+                MessageQueue messageQueue = new MessageQueue{ message = product.description };
+                queueService.sendMessage(messageQueue);
+
                 return new OkObjectResult(product);
             }
             else
@@ -135,6 +141,8 @@ namespace ACMEStoreWebAPI.Controllers
                 product.status = "TOSELL";
                 _productContext.SaveChanges();
 
+                MessageQueue messageQueue = new MessageQueue { message = product.description };
+                queueService.sendMessage(messageQueue);
                 return new OkObjectResult(true);
             }
             else
