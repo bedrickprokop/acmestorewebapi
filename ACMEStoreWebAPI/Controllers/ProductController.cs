@@ -109,7 +109,12 @@ namespace ACMEStoreWebAPI.Controllers
                 Product productFinded = _productContext.ProductItems.First(t => t.id == productId);
                 if (null != productFinded)
                 {
-                    productFinded = product;
+                    productFinded.name = product.name;
+                    productFinded.description = product.description;
+                    productFinded.pictureUrl = product.pictureUrl;
+                    productFinded.unitPrice = product.unitPrice;
+                    productFinded.status = product.status;
+                    productFinded.ownerId = product.ownerId;
                     _productContext.ProductItems.Update(productFinded);
                     _productContext.SaveChanges();
 
@@ -177,8 +182,19 @@ namespace ACMEStoreWebAPI.Controllers
                 product.status = "TOSELL";
                 _productContext.SaveChanges();
 
-                MessageQueue messageQueue = new MessageQueue { message = product.description };
-                queueService.sendMessage(messageQueue);
+                User user = _userContext.UserItems.First(t => t.id == product.ownerId);
+                if (null != user)
+                {
+                    MessageQueue messageQueue = new MessageQueue
+                    {
+                        productId = product.id,
+                        fromNotification = true,
+                        fromView = "all",
+                        user = user,
+                        message = "New product available"
+                    };
+                    queueService.sendMessage(messageQueue);
+                }
                 return new OkObjectResult(true);
             }
             else
